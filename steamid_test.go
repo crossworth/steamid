@@ -81,19 +81,19 @@ func ExampleNew() {
 	// Output: {1 1 1 80451379}
 }
 
-func ExampleGetSteam2RenderedID() {
+func ExampleSteamID_GetSteam2RenderedID() {
 	sid, _ := steamid.New(76561198040717107)
 	fmt.Println(sid.GetSteam2RenderedID(), sid.GetSteam2RenderedID(true))
 	// Output: STEAM_0:1:40225689 STEAM_1:1:40225689
 }
 
-func ExampleCanGetSteam3RenderedID() {
+func ExampleSteamID_GetSteam3RenderedID() {
 	sid, _ := steamid.New(76561198040717107)
 	fmt.Println(sid.GetSteam3RenderedID())
 	// Output: [U:1:80451379]
 }
 
-func ExampleGetSteamID64() {
+func ExampleSteamID_GetSteamID64() {
 	sid, _ := steamid.New(76561198040717107)
 	fmt.Println(sid.GetSteamID64())
 	// Output: 76561198040717107
