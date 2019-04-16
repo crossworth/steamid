@@ -1,95 +1,100 @@
-package steamid
+package steamid_test
 
-import "testing"
+import (
+	"fmt"
+	"testing"
 
-func TestCanCreateSteamID2(t *testing.T) {
-    _, err := NewSteamID("STEAM_0:1:40225689")
+	"github.com/crossworth/steamid"
+)
 
-    if err != nil {
-       t.Fail()
-    }
+var validSteamIds = []interface{}{
+	"STEAM_0:1:40225689",
+	"[U:1:80451379]",
+	"76561198040717107",
+	76561198040717107,
 }
 
-func TestCanCreateSteamID3(t *testing.T) {
-    _, err := NewSteamID("[U:1:80451379]")
-
-    if err != nil {
-       t.Fail()
-    }
+var invalidSteamIds = []interface{}{
+	"test",
+	"1233.0f",
+	"fff",
+	"",
+	"STEMM_0:1:40225689",
 }
 
-func TestCanCreateSteamID64WithString(t *testing.T) {
-    _, err := NewSteamID("76561198040717107")
+func TestCanCreateSteamID(t *testing.T) {
 
-    if err != nil {
-       t.Fail()
-    }
-}
+	for _, sid := range validSteamIds {
+		_, err := steamid.New(sid)
 
-func TestCanCreateSteamID64WithNumber(t *testing.T) {
-    _, err := NewSteamID(76561198040717107)
+		if err != nil {
+			t.Fail()
+		}
+	}
 
-    if err != nil {
-       t.Fail()
-    }
-}
-
-func TestCannotCreateSteamIDWithInvalidInput(t *testing.T) {
-	values := []string {"test", "1233.0f", "fff", "", "STEMM_0:1:40225689"}
-
-	for _, value := range values {
-		_, err := NewSteamID(value)
+	for _, sid := range invalidSteamIds {
+		_, err := steamid.New(sid)
 
 		if err == nil {
-		   t.Errorf("Input %v should not be valid", value)
+			t.Fail()
 		}
 	}
 }
 
-func TestCanValidateSteamID2(t *testing.T) {
-	sid, _ := NewSteamID("STEAM_0:1:40225689")
+func TestCanValidateSteamID(t *testing.T) {
+	for _, sid := range validSteamIds {
+		s, _ := steamid.New(sid)
 
-	if !sid.IsValid() {
-		t.Fail()
-	}
-}
-
-func TestCanValidateSteamID3(t *testing.T) {
-	sid, _ := NewSteamID("[U:1:80451379]")
-
-	if !sid.IsValid() {
-		t.Fail()
-	}
-}
-
-func TestCanValidateSteamID64(t *testing.T) {
-	sid, _ := NewSteamID(76561198040717107)
-
-	if !sid.IsValid() {
-		t.Fail()
+		if !s.IsValid() {
+			t.Fail()
+		}
 	}
 }
 
 func TestCanGetSteam2RenderedIDWithOldFormat(t *testing.T) {
-	sid, _ := NewSteamID(76561198040717107)
+	sid, _ := steamid.New(76561198040717107)
 
 	if sid.GetSteam2RenderedID() != "STEAM_0:1:40225689" {
-		t.Errorf("Should have got %v got %v insted", "STEAM_0:1:40225689", sid.GetSteam2RenderedID())
+		t.Errorf("Expected %v got %v\n", "STEAM_0:1:40225689", sid.GetSteam2RenderedID())
 	}
 }
 
 func TestCanGetSteam2RenderedIDWithNewFormat(t *testing.T) {
-	sid, _ := NewSteamID(76561198040717107)
+	sid, _ := steamid.New(76561198040717107)
 
 	if sid.GetSteam2RenderedID(true) != "STEAM_1:1:40225689" {
-		t.Errorf("Should have got %v got %v insted", "STEAM_1:1:40225689", sid.GetSteam2RenderedID())
+		t.Errorf("Expected %v got %v\n", "STEAM_1:1:40225689", sid.GetSteam2RenderedID())
 	}
 }
 
 func TestCanGetSteam3RenderedID(t *testing.T) {
-	sid, _ := NewSteamID(76561198040717107)
+	sid, _ := steamid.New(76561198040717107)
 
 	if sid.GetSteam3RenderedID() != "[U:1:80451379]" {
-		t.Errorf("Should have got %v got %v insted", "[U:1:80451379]", sid.GetSteam3RenderedID())
+		t.Errorf("Expected %v got %v\n", "[U:1:80451379]", sid.GetSteam3RenderedID())
 	}
+}
+
+func ExampleNew() {
+	sid, _ := steamid.New(76561198040717107)
+	fmt.Println(sid)
+	// Output: {1 1 1 80451379}
+}
+
+func ExampleGetSteam2RenderedID() {
+	sid, _ := steamid.New(76561198040717107)
+	fmt.Println(sid.GetSteam2RenderedID(), sid.GetSteam2RenderedID(true))
+	// Output: STEAM_0:1:40225689 STEAM_1:1:40225689
+}
+
+func ExampleCanGetSteam3RenderedID() {
+	sid, _ := steamid.New(76561198040717107)
+	fmt.Println(sid.GetSteam3RenderedID())
+	// Output: [U:1:80451379]
+}
+
+func ExampleGetSteamID64() {
+	sid, _ := steamid.New(76561198040717107)
+	fmt.Println(sid.GetSteamID64())
+	// Output: 76561198040717107
 }

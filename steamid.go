@@ -1,3 +1,6 @@
+// Package steamid provide a easy way to handle Steam ID`s in GO
+// The exposed API is very similiar to the NodeJS version
+// https://github.com/DoctorMcKay/node-steamid
 package steamid
 
 import (
@@ -7,6 +10,7 @@ import (
 	"strconv"
 )
 
+// The account universes
 const (
 	UniverseInvalid = iota
 	UniversePublic
@@ -15,6 +19,7 @@ const (
 	UniverseDev
 )
 
+// The account types
 const (
 	TypeInvalid = iota
 	TypeIndividual
@@ -25,10 +30,11 @@ const (
 	TypeContentServer
 	TypeClan
 	TypeChat
-	TypeP2PSuperSeeder
+	typeP2PSuperSeeder
 	TypeAnonUser
 )
 
+// The account instances
 const (
 	InstanceAll = iota
 	InstanceDesktop
@@ -37,26 +43,28 @@ const (
 )
 
 const (
-	AccountIDMask = 0xFFFFFFFF
-	AccountInstanceMask = 0x000FFFFF
+	accountInstanceMask = 0x000FFFFF
 )
 
 const (
-	ChatInstanceFlagClan = (AccountInstanceMask + 1) >> 1
-	ChatInstanceFlagLobby = (AccountInstanceMask + 1) >> 2
-	ChatInstanceFlagMMSLobby = (AccountInstanceMask + 1) >> 3
+	chatInstanceFlagClan     = (accountInstanceMask + 1) >> 1
+	chatInstanceFlagLobby    = (accountInstanceMask + 1) >> 2
+	chatInstanceFlagMMSLobby = (accountInstanceMask + 1) >> 3
 )
 
+// An SteamID contains the Universe, Type, Instance and AccountID
+// for the account
 type SteamID struct {
-	Universe int
-	Type int
-	Instance int
+	Universe  int
+	Type      int
+	Instance  int
 	AccountID int
 }
 
-func NewSteamID(input ...interface{}) (SteamID, error) {
+// New create a SteamID struct validating it for the given input
+// it accepts SteamID2, SteamID3, SteamID64 as uint or string
+func New(input ...interface{}) (SteamID, error) {
 	steamID := SteamID{UniverseInvalid, TypeInvalid, InstanceAll, 0}
-
 	if len(input) == 0 {
 		return steamID, nil
 	}
@@ -68,7 +76,7 @@ func NewSteamID(input ...interface{}) (SteamID, error) {
 	if id2.MatchString(idstr) {
 		sidid2 := id2.FindStringSubmatch(idstr)
 		universe, _ := strconv.Atoi(sidid2[1])
-		accountId, _ := strconv.Atoi(sidid2[3])
+		accountID, _ := strconv.Atoi(sidid2[3])
 		authServer, _ := strconv.Atoi(sidid2[2])
 
 		if universe == 0 {
@@ -78,7 +86,7 @@ func NewSteamID(input ...interface{}) (SteamID, error) {
 		steamID.Universe = universe
 		steamID.Type = TypeIndividual
 		steamID.Instance = InstanceDesktop
-		steamID.AccountID = accountId << 1 | authServer
+		steamID.AccountID = accountID<<1 | authServer
 		return steamID, nil
 	}
 
@@ -87,7 +95,7 @@ func NewSteamID(input ...interface{}) (SteamID, error) {
 	if id3.MatchString(idstr) {
 		sidid3 := id3.FindStringSubmatch(idstr)
 		universe, _ := strconv.Atoi(sidid3[2])
-		accountId, _ := strconv.Atoi(sidid3[3])
+		accountID, _ := strconv.Atoi(sidid3[3])
 
 		typeChar := sidid3[1]
 
@@ -98,14 +106,14 @@ func NewSteamID(input ...interface{}) (SteamID, error) {
 		}
 
 		steamID.Universe = universe
-		steamID.AccountID = accountId
+		steamID.AccountID = accountID
 
 		switch typeChar {
 		case "c":
-			steamID.Instance |= ChatInstanceFlagClan
+			steamID.Instance |= chatInstanceFlagClan
 			steamID.Type = TypeChat
 		case "L":
-			steamID.Instance |= ChatInstanceFlagLobby
+			steamID.Instance |= chatInstanceFlagLobby
 			steamID.Type = TypeChat
 		case "I":
 			steamID.Type = TypeInvalid
@@ -133,19 +141,20 @@ func NewSteamID(input ...interface{}) (SteamID, error) {
 		return steamID, nil
 	}
 
-	accountId, err := strconv.ParseInt(idstr, 10, 64)
+	accountID, err := strconv.ParseInt(idstr, 10, 64)
 
 	if err == nil {
-		steamID.AccountID = int(accountId & 0xFFFFFFFF >> 0)
-		steamID.Instance = int((accountId >> 32) & 0xFFFFF)
-		steamID.Type = int((accountId >> 52) & 0xF)
-		steamID.Universe = int((accountId >> 56) & 0xFF)
+		steamID.AccountID = int(accountID & 0xFFFFFFFF >> 0)
+		steamID.Instance = int((accountID >> 32) & 0xFFFFF)
+		steamID.Type = int((accountID >> 52) & 0xF)
+		steamID.Universe = int((accountID >> 56) & 0xFF)
 		return steamID, nil
 	}
 
 	return steamID, errors.New("invalid input")
 }
 
+// IsValid check if the SteamID struct is valid
 func (sid *SteamID) IsValid() bool {
 
 	if sid.Type <= TypeInvalid || sid.Type > TypeAnonUser {
@@ -171,16 +180,20 @@ func (sid *SteamID) IsValid() bool {
 	return true
 }
 
+// IsGroupChat check if the SteamID struct is a group chat type
 func (sid *SteamID) IsGroupChat() bool {
-	return !!(sid.Type == TypeChat && (sid.Instance & ChatInstanceFlagClan) != 0)
+	return !!(sid.Type == TypeChat && (sid.Instance&chatInstanceFlagClan) != 0)
 }
 
+// IsLobby check if the SteamID struct is a lobby chat type
 func (sid *SteamID) IsLobby() bool {
 	return !!(sid.Type == TypeChat &&
-		((sid.Instance & ChatInstanceFlagLobby) != 0 ||
-			(sid.Instance & ChatInstanceFlagMMSLobby) != 0))
+		((sid.Instance&chatInstanceFlagLobby) != 0 ||
+			(sid.Instance&chatInstanceFlagMMSLobby) != 0))
 }
 
+// GetSteam2RenderedID return the SteamID as a SteamID2, if you pass an optional
+// bool argument it can return the SteamID2 the new format
 func (sid *SteamID) GetSteam2RenderedID(newerFormat ...bool) string {
 	universe := 0
 
@@ -188,9 +201,10 @@ func (sid *SteamID) GetSteam2RenderedID(newerFormat ...bool) string {
 		universe = 1
 	}
 
-	return "STEAM_" +  strconv.Itoa(universe) + ":" + strconv.Itoa(sid.AccountID & 1) + ":" + strconv.Itoa(sid.AccountID / 2)
+	return "STEAM_" + strconv.Itoa(universe) + ":" + strconv.Itoa(sid.AccountID&1) + ":" + strconv.Itoa(sid.AccountID/2)
 }
 
+// GetSteam3RenderedID return the SteamID as a SteamID3
 func (sid *SteamID) GetSteam3RenderedID() string {
 	typeChar := "i"
 
@@ -217,15 +231,15 @@ func (sid *SteamID) GetSteam3RenderedID() string {
 		typeChar = "a"
 	}
 
-	if sid.Instance & ChatInstanceFlagClan != 0 {
+	if sid.Instance&chatInstanceFlagClan != 0 {
 		typeChar = "c"
-	} else if sid.Instance & ChatInstanceFlagLobby != 0 {
+	} else if sid.Instance&chatInstanceFlagLobby != 0 {
 		typeChar = "L"
 	}
 
 	renderInstance := sid.Type == TypeAnonGameServer ||
 		sid.Type == TypeMultiSeat ||
-		(sid.Type == TypeIndividual && sid.Instance != InstanceDesktop);
+		(sid.Type == TypeIndividual && sid.Instance != InstanceDesktop)
 
 	instance := ""
 
@@ -236,8 +250,9 @@ func (sid *SteamID) GetSteam3RenderedID() string {
 	return "[" + typeChar + ":" + strconv.Itoa(sid.Universe) + ":" + strconv.Itoa(sid.AccountID) + instance + "]"
 }
 
+// GetSteamID64 return the SteamID as a SteamID64
 func (sid *SteamID) GetSteamID64() uint64 {
-	highPart := uint64((sid.Universe << 24) | (sid.Type << 20) | sid.Universe) << 32
+	highPart := uint64((sid.Universe<<24)|(sid.Type<<20)|sid.Universe) << 32
 	return highPart | uint64(sid.AccountID)
 }
 
